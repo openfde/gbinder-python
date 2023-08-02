@@ -56,7 +56,7 @@ cdef class RemoteObject:
     def add_death_handler(self, notify_func):
         if self._object is not NULL:
             self.notify_func = notify_func
-            return cgbinder.gbinder_remote_object_add_death_handler(self._object, remote_object_local_notify_func, <void*>self)
+            return cgbinder.gbinder_remote_object_add_death_handler(self._object, <cgbinder.GBinderRemoteObjectNotifyFunc>remote_object_local_notify_func, <void*>self)
 
     def notify_func_callback(self):
         self.notify_func()
@@ -191,7 +191,7 @@ cdef class Client:
     def transact(self, unsigned int code, unsigned int flags, LocalRequest req, reply_func, destroy_notif):
         self.reply_func = reply_func
         self.destroy_notif = destroy_notif
-        return cgbinder.gbinder_client_transact(self._client, code, flags, req._req, client_reply_func, local_destroy_notif, <void*>self)
+        return cgbinder.gbinder_client_transact(self._client, code, flags, req._req, <cgbinder.GBinderClientReplyFunc>client_reply_func, <cgbinder.GDestroyNotify>local_destroy_notif, <void*>self)
 
     def reply_func_callback(self, reply, status):
         self.reply_func(reply, status)
@@ -233,7 +233,7 @@ cdef class LocalRequest:
     def cleanup(self, destroy_notif):
         if self._req is not NULL:
             self.destroy_notif = destroy_notif
-            cgbinder.gbinder_local_request_cleanup(self._req, local_destroy_notif, <void*>self)
+            cgbinder.gbinder_local_request_cleanup(self._req, <cgbinder.GDestroyNotify>local_destroy_notif, <void*>self)
 
     def destroy_notif_callback(self):
         self.destroy_notif()
@@ -316,7 +316,7 @@ cdef class LocalReply:
     def cleanup(self, destroy_notif):
         if self._reply is not NULL:
             self.destroy_notif = destroy_notif
-            cgbinder.gbinder_local_reply_cleanup(self._reply, local_destroy_notif, <void*>self)
+            cgbinder.gbinder_local_reply_cleanup(self._reply, <cgbinder.GDestroyNotify>local_destroy_notif, <void*>self)
 
     def destroy_notif_callback(self):
         self.destroy_notif()
@@ -489,7 +489,7 @@ cdef class LocalObject:
                 iface = ensure_binary(ifaces_list[i])
                 ifaces[i] = iface
             ifaces[l] = NULL
-            self._object = cgbinder.gbinder_local_object_new(ipc._ipc, ifaces, local_transact_callback, <void*>self)
+            self._object = cgbinder.gbinder_local_object_new(ipc._ipc, ifaces, <cgbinder.GBinderLocalTransactFunc>local_transact_callback, <void*>self)
 
     def __dealloc__(self):
         if self._object is not NULL:
@@ -549,10 +549,10 @@ cdef class ServiceManager:
                 iface = ensure_binary(ifaces_list[i])
                 ifaces[i] = iface
             ifaces[l] = NULL
-            local_object._object = cgbinder.gbinder_servicemanager_new_local_object2(self._sm, ifaces, local_transact_callback, <void*>local_object)
+            local_object._object = cgbinder.gbinder_servicemanager_new_local_object2(self._sm, ifaces, <cgbinder.GBinderLocalTransactFunc>local_transact_callback, <void*>local_object)
         else:
             free(ifaces)
-            local_object._object = cgbinder.gbinder_servicemanager_new_local_object(self._sm, ensure_binary(ifaces_list), local_transact_callback, <void*>local_object)
+            local_object._object = cgbinder.gbinder_servicemanager_new_local_object(self._sm, ensure_binary(ifaces_list), <cgbinder.GBinderLocalTransactFunc>local_transact_callback, <void*>local_object)
 
         return local_object
 
@@ -572,7 +572,7 @@ cdef class ServiceManager:
         if self._sm is NULL:
             return None
         self.list_func = list_func
-        status = cgbinder.gbinder_servicemanager_list(self._sm, service_manager_list_func, <void*>self)
+        status = cgbinder.gbinder_servicemanager_list(self._sm, <cgbinder.GBinderServiceManagerListFunc>service_manager_list_func, <void*>self)
         return status
 
     def list_func_callback(self, services_list):
@@ -594,7 +594,7 @@ cdef class ServiceManager:
         if self._sm is NULL:
             return None
         self.get_service_func = get_service_func
-        cdef int status = cgbinder.gbinder_servicemanager_get_service(self._sm, ensure_binary(name), service_manager_get_service_func, <void*>self)
+        cdef int status = cgbinder.gbinder_servicemanager_get_service(self._sm, ensure_binary(name), <cgbinder.GBinderServiceManagerGetServiceFunc>service_manager_get_service_func, <void*>self)
         return status
 
     def get_service_func_callback(self, remote, status):
@@ -617,7 +617,7 @@ cdef class ServiceManager:
         if self._sm is NULL:
             return None
         self.add_service_func = add_service_func
-        cdef int status = cgbinder.gbinder_servicemanager_add_service(self._sm, ensure_binary(name), obj._object, service_manager_add_service_func, <void*>self)
+        cdef int status = cgbinder.gbinder_servicemanager_add_service(self._sm, ensure_binary(name), obj._object, <cgbinder.GBinderServiceManagerAddServiceFunc>service_manager_add_service_func, <void*>self)
         return status
 
     def add_service_func_callback(self, status):
@@ -636,7 +636,7 @@ cdef class ServiceManager:
         if self._sm is NULL:
             return None
         self.func = func
-        cdef unsigned long status = cgbinder.gbinder_servicemanager_add_presence_handler(self._sm, service_manager_func, <void*>self)
+        cdef unsigned long status = cgbinder.gbinder_servicemanager_add_presence_handler(self._sm, <cgbinder.GBinderServiceManagerFunc>service_manager_func, <void*>self)
         return status
 
     def func_callback(self):
@@ -646,7 +646,7 @@ cdef class ServiceManager:
         if self._sm is NULL:
             return None
         self.registration_func = registration_func
-        cdef unsigned long status = cgbinder.gbinder_servicemanager_add_registration_handler(self._sm, ensure_binary(name), service_manager_registration_func, <void*>self)
+        cdef unsigned long status = cgbinder.gbinder_servicemanager_add_registration_handler(self._sm, ensure_binary(name), <cgbinder.GBinderServiceManagerRegistrationFunc>service_manager_registration_func, <void*>self)
         return status
 
     def registration_func_callback(self, name):
@@ -794,7 +794,7 @@ cdef class Writer:
 
     def add_cleanup(self, destroy_notif):
         self.destroy_notif = destroy_notif
-        cgbinder.gbinder_writer_add_cleanup(&self._writer, local_destroy_notif, <void*>self)
+        cgbinder.gbinder_writer_add_cleanup(&self._writer, <cgbinder.GDestroyNotify>local_destroy_notif, <void*>self)
 
     def destroy_notif_callback(self):
         self.destroy_notif()
