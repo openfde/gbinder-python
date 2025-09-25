@@ -17,7 +17,10 @@ if "--cython" in sys.argv:
 
 file_ext = ".pyx" if USE_CYTHON else ".c"
 
-extension_kwargs = { 'sources': ["gbinder" + file_ext] }
+if sys.version_info < (3, 12):
+    extension_kwargs = { 'sources': ["gbinder" + file_ext] }
+else:
+    extension_kwargs = { 'sources': ["gbinder_noexcept" + file_ext] }
 extension_kwargs = pkgconfig('libgbinder', extension_kwargs)
 if None in extension_kwargs:
     del extension_kwargs[None]
